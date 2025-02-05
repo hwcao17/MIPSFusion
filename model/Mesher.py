@@ -1,4 +1,5 @@
 import numpy as np
+np.bool = np.bool_
 import torch
 import os
 import open3d as o3d
@@ -286,7 +287,7 @@ class Mesher(object):
     #-@return sub_mesh: RGB mesh of this submap, trimesh.Trimesh obj;
     #-@return using_obbox: whether the bounding geometry is oriented-bbox all voxelgrid, bool.
     @torch.no_grad()
-    def extract_single_mesh(self, model, localMLP_Id, kf_num=None, save_path=None, render_color=True):
+    def extract_single_mesh(self, model, localMLP_Id, kf_num=None, save_path=None, render_color=True, LC=True):
         if kf_num is None:
             kf_num = self.kfSet.collected_kf_num[0]
 
@@ -295,10 +296,25 @@ class Mesher(object):
         related_kf_Ids = torch.where(related_kf_mask > 0)[0]
         if related_kf_Ids.shape[0] == 0:
             return
+        # print('start to extract poses.............')
+        # print('save path:', save_path)
 
         first_kf_pose, first_kf_Id, poses_local, _, _, _, _, _ = self.kfSet.extract_localMLP_vars_given(localMLP_Id, related_kf_Ids, self.slam.kf_c2w[:kf_num],
                                                                                                         self.slam.est_c2w_data, self.slam.keyframe_ref[:kf_num])
         poses_world = first_kf_pose @ poses_local  # world poses of all selected keyframes, Tensor(n, 4, 4)
+        # save kf ids and poses
+        
+        # pose_save_root = '/home/hanwen/code/neural_slam/MIPSFusion/output/FastCaMo-large'
+        last_slash = save_path.rfind('/')
+        
+        if LC:
+            save_dir = os.path.join(save_path[:last_slash], '../poses_LC')
+        else:
+            save_dir = os.path.join(save_path[:last_slash], '../poses_GO')
+        
+        os.makedirs(save_dir, exist_ok=True)
+        save_file = os.path.join(save_dir, f'{localMLP_Id}.pt')
+        torch.save({'kf_Ids': related_kf_Ids, 'kf_poses': poses_world}, save_file)
 
         # Step 2: construct meshgrids
         # 2.1: get min and max bound from localMLP center and axis-aligned length

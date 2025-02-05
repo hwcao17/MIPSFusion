@@ -35,10 +35,10 @@ python main.py --config configs/FastCaMo-synth/apartment_2.yaml
 &#x27A1; The result will be saved to `{result_path}=output/{dataset_name}/{sequence_name}/0` by default. For example: `output/FastCaMo-synth/apartment_2/0`.
 
 
-## Visualization
-To get reconstructd triangle mesh of the scene, an extra step (joint marching cubes) should be taken. You can run
+## Visualization and save estimated poses
+You can run
 ```
-python vis/render_mesh.py --config {config_file} --seq_result {result_path} --ckpt {ckpt_id}
+python render_mesh.py --config {config_file} --seq_result {result_path} --ckpt {ckpt_id} --LC
 ```
 Here `ckpt_id` is the ID corresponding to a selected checkpoint (checkpoints are periodically saved when code running), such as `100`, `500`, `final`. 
 
@@ -46,10 +46,13 @@ By this way, You can choose to either render the final mesh or reconstructed mes
 
 For example:
 ```
-python vis/render_mesh.py --config configs/FastCaMo-synth/apartment_2.yaml --seq_result output/FastCaMo-synth/apartment_2/0 --ckpt final
+python render_mesh.py --config configs/FastCaMo-large/floor1.yaml --seq_result output/FastCaMo-large/floor1/0 --ckpt final --LC
 ```
-&#x27A1; The reconstructed mesh can be found at `{result_path}/result`. For example: `output/FastCaMo-synth/apartment_2/0/result`.
+&#x27A1; The reconstructed mesh can be found at `{result_path}/result`. For example: `output/FastCaMo-large/floor1/0/result`.
 
+&#x27A1; The estimated poses can be found at `{result_path}/poses_LC`. For example: `output/FastCaMo-large/floor1/0/poses_LC`.
+
+&#x27A1; To get the poses estimated without loop closure, remove the `--LC` flag and the poses can be found at `{result_path}/poses_GO`
 
 ## Dataset
 FastCaMo-synth dataset (proposed in [ROSEFusion](https://github.com/jzhzhang/ROSEFusion)) can be found [here](https://1drv.ms/u/c/b190b6248ff4b487/EYDML_iplvpCht3XPdxoolYBRznXPXOWnigS-B6SxKKc3g?e=eLk9HZ)(with GT poses), and our FastCaMo-large dataset can be found [here](https://drive.google.com/drive/folders/186viK0tSAFVDO_6YJbC3MGXOXzcBQT_z?usp=drive_link).

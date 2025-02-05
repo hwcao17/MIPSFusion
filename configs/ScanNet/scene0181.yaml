@@ -4,7 +4,7 @@ mapping:
   marching_cubes_bound: [ [ -0.3, 8.2 ],[ -0.3, 7.3 ],[ -0.3, 2.8 ] ]
 
 data:
-  datadir: /media/javens/TYJ_lab1T/Dataset/ScanNet/all_sens/scans/scene0181_00/output
+  datadir: /home/hanwen/data/ScanNet/scans/scene0181_00/frames
   trainskip: 1
   output: output/scannet/scene0181_00
   exp_name: "0"

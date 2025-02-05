@@ -5,6 +5,7 @@ import numpy as np
 import random
 import time
 import torch.multiprocessing as mp
+torch.multiprocessing.set_sharing_strategy('file_system')
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -70,8 +71,11 @@ class MIPSFusion():
         self.overlap_kf_flag = torch.zeros((self.num_kf, )).share_memory_()
 
         self.kf_c2w = torch.zeros((self.num_kf, 4, 4)).to(self.device).share_memory_()  # store absolute pose in World Coordinate System of each localMLP's first keyframe or overlapping keyframes
+        self.kf_c2w_GO = torch.zeros((self.num_kf, 4, 4)).to(self.device).share_memory_()
         self.est_c2w_data = torch.zeros((self.num_frames, 4, 4)).to(self.device).share_memory_()  # store absolute pose in Local Coordinate System of each frame (keyframe)
         self.est_c2w_data_rel = torch.eye(4).repeat((self.num_frames, 1, 1)).to(self.device).share_memory_()  # store relative pose in Local Coordinate System of each frame
+        self.est_c2w_data_RO = torch.zeros((self.num_frames, 4, 4)).to(self.device).share_memory_()
+        self.est_c2w_data_GO = torch.zeros((self.num_frames, 4, 4)).to(self.device).share_memory_()
         self.load_gt_pose()  # load gt poses
         self.temp_local_pose = torch.zeros((1, 4, 4)).to(self.device).share_memory_()  # pose of triggering overlapping keyframe in previous active_localMLP's CS
         self.rectified_local_pose = torch.eye(4).unsqueeze(0).share_memory_()  # pose of triggering overlapping keyframe in latter active_localMLP's CS (rectified)
@@ -159,7 +163,10 @@ class MIPSFusion():
 
         # Step 1: fill keyframe-related, localMLP-related vars for the first keyframe
         self.kf_c2w[0] = c2w
+        self.kf_c2w_GO[0] = c2w
         self.est_c2w_data[0] = c2w_local
+        self.est_c2w_data_RO[0] = c2w_local
+        self.est_c2w_data_GO[0] = c2w_local
         self.keyframe_ref[0] = -1
 
         self.kfSet.localMLP_first_kf[0] = 0
@@ -497,6 +504,9 @@ class MIPSFusion():
         else:
             cur_rot, cur_trans, pose_optimizer = self.get_pose_param_optim(cur_c2w[None, ...], mapping=False)
 
+        c2w_est_RO = self.matrix_from_tensor(cur_rot, cur_trans)
+        self.est_c2w_data_RO[frame_id] = c2w_est_RO.detach().clone()[0]
+
         # Step 2: do GO
         for i in range(n_iter_GO):
             pose_optimizer.zero_grad()
@@ -558,9 +568,11 @@ class MIPSFusion():
         if self.config["tracking"]["best"]:  # default
             # Use the pose with smallest loss
             self.est_c2w_data[frame_id] = best_c2w_est.detach().clone()[0]
+            self.est_c2w_data_GO[frame_id] = best_c2w_est.detach().clone()[0]
         else:
             # Use the pose after the last iteration
             self.est_c2w_data[frame_id] = c2w_est.detach().clone()[0]
+            self.est_c2w_data_GO[frame_id] = c2w_est.detach().clone()[0]
 
         # Step 3: Save relative pose for non-keyframes
         if frame_id % self.config["mapping"]["keyframe_every"] != 0:  # case 1: for non-keyframe
@@ -656,6 +668,9 @@ class MIPSFusion():
     def inactive_map_start(self):
         self.inactive_map.run()
 
+    def get_num_kf_poses(self):
+        n_kf_poses = (self.kf_c2w.reshape(self.kf_c2w.shape[0], -1) != 0).any(dim=1).sum().item()
+        return n_kf_poses
 
     # entry function
     def run(self):
@@ -687,12 +702,10 @@ class MIPSFusion():
                 if i % self.config["mapping"]["keyframe_every"] == 0:
                     kf_id = i // self.config["mapping"]["keyframe_every"]  # keyframe_Id of this keyframe
                     self.kfSet.add_keyframe(batch)
-
                     if (i - self.last_switch_frame[0]) <= self.config["tracking"]["switch_interval"]:
                         return_flag = self.manager.process_keyframe(batch, self.active_localMLP_Id[0], self.est_c2w_data[i], i, kf_id, force=True)
                     else:
                         return_flag = self.manager.process_keyframe(batch, self.active_localMLP_Id[0], self.est_c2w_data[i], i, kf_id)
-
                     # for active submap switch
                     if return_flag == 3:  # case 1: create a new localMLP
                         self.active_submap_switch_new(i, kf_id)

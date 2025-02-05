@@ -552,6 +552,7 @@ class KeyframeSet():
             poses_local[0] = first_pose_local
 
         # 3.2: for given keyframes which are first keyframe of another localMLP: firstly extract their world poses, and then convert them to local poses
+        print('given_kf_Ids:', given_kf_Ids.shape, 'given_kf_ref:', given_kf_ref.shape)
         ano_first_kf_idx = torch.where( torch.logical_and(given_kf_Ids != first_kf_Id, given_kf_ref == -1) )[0]
         if ano_first_kf_idx.shape[0] > 0:
             ano_first_kf_Ids = given_kf_Ids[ano_first_kf_idx]

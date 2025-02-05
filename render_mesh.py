@@ -8,9 +8,17 @@ from mipsfusion import MIPSFusion
 from model.scene_rep import JointEncoding
 
 
-def fill_members(slam, kfSet, tensor_dict):
-    slam.kf_c2w = tensor_dict["kf_c2w"]
-    slam.est_c2w_data = tensor_dict["est_c2w_data"]
+def fill_members(slam, kfSet, tensor_dict, LC=True):
+    if LC:
+        slam.kf_c2w = tensor_dict["kf_c2w"]
+        slam.est_c2w_data = tensor_dict["est_c2w_data"]
+    else:
+        slam.kf_c2w = tensor_dict["kf_c2w_GO"]
+        slam.est_c2w_data = tensor_dict["est_c2w_data_GO"]
+
+    print('kf_c2w:', slam.kf_c2w.shape)
+    print('est_c2w_data:', slam.est_c2w_data.shape)
+    slam.est_c2w_data_RO = tensor_dict["est_c2w_data_RO"]
     slam.est_c2w_data_rel = tensor_dict["est_c2w_data_rel"]
     
     slam.keyframe_ref = tensor_dict["keyframe_ref"]
@@ -42,9 +50,12 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, help='Path to config file.')
     parser.add_argument('--seq_result', type=str, help='Output path of running this sequence.')
     parser.add_argument('--ckpt', type=str, help='Path of selected checkpoint.')
+    parser.add_argument('--LC', action='store_true', help='Whether to use LC.')
     args = parser.parse_args()
 
     cfg = config.load_config(args.config)
+    LC = args.LC
+    scene = 'lab'
 
     result_path = os.path.join(args.seq_result, "result")  # dir to save result of this running
     os.makedirs(result_path, exist_ok=True)
@@ -73,7 +84,7 @@ if __name__ == '__main__':
 
     # Step 2: load ckpt
     dict_tensors = logger.load_ckpt(os.path.join(ckpt_dir, "ckpt.pt"))
-    fill_members(slam, kfSet, dict_tensors)
+    fill_members(slam, kfSet, dict_tensors, LC)
     kf_num = torch.where(slam.keyframe_ref != -3)[0].shape[0]
 
     # Step 3: render each mesh
@@ -81,7 +92,8 @@ if __name__ == '__main__':
     submesh_list = []  # list trimesh.Trimesh.
     for i in range(len(model_list)):
         mesh_save_path = os.path.join(result_path, "%d.ply" % i)
-        bounding_geometry, submesh, using_obbox = logger.extract_a_mesh_offline(i, model_list[i], kf_num, mesh_save_path)
+        
+        bounding_geometry, submesh, using_obbox = logger.extract_a_mesh_offline(i, model_list[i], kf_num, mesh_save_path, LC)
         bound_geo_list.append(bounding_geometry)
         submesh_list.append(submesh)
 

@@ -12,7 +12,7 @@ grid:
   hash_size: 16
 
 data:
-  datadir: /media/javens/extra_space/Dataset/IndoorLarge_VF_NS/building2_f
+  datadir: /home/hanwen/data/FastCaMo-large/floor2
   trainskip: 1
   output: output/FastCaMo-large/floor2
   exp_name: "0"

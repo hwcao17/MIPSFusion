@@ -13,7 +13,7 @@ cam:
   far: 7
 
 data:
-  datadir: /media/javens/TYJ_lab1T/Dataset/ScanNet/all_sens/scans/scene0059_00/output
+  datadir: /home/hanwen/data/ScanNet/scans/scene0059_00/frames
   trainskip: 1
   output: output/scannet/scene0059_00
   exp_name: "0"

@@ -8,7 +8,7 @@ mapping:
   localMLP_max_len_back: [ 7., 7., 4. ]
 
 data:
-  datadir: /media/javens/TYJ_lab1T/Dataset/ScanNet/all_sens/scans/scene0207_00/output
+  datadir: /home/hanwen/data/ScanNet/scans/scene0207_00/frames
   trainskip: 1
   output: output/scannet/scene0207_00
   exp_name: "0"

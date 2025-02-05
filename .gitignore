@@ -5,3 +5,5 @@ __pycache__
 output
 testing
 temp
+external/NumpyMarchingCubes/marching_cubes
+external/NumpyMarchingCubes/build

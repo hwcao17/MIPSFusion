@@ -43,7 +43,10 @@ class Logger():
         tensor_dict = {
             # pose-related tensors
             "kf_c2w": self.slam.kf_c2w,
+            "kf_c2w_GO": self.slam.kf_c2w_GO,
             "est_c2w_data": self.slam.est_c2w_data,
+            "est_c2w_data_RO": self.slam.est_c2w_data_RO,
+            "est_c2w_data_GO": self.slam.est_c2w_data_GO,
             "est_c2w_data_rel": self.slam.est_c2w_data_rel,
 
             # keyframe-related tensors
@@ -65,6 +68,7 @@ class Logger():
 
             "do_globalBA": self.slam.do_globalBA
         }
+        print('saving ckpt to:', save_path)
         torch.save(tensor_dict, save_path)
         print("Checkpoint for frame_%d was saved." % frame_id)
 
@@ -152,8 +156,8 @@ class Logger():
         self.mesher.extract_single_mesh(model, localMLP_Id, save_path=mesh_save_path)
 
 
-    def extract_a_mesh_offline(self, localMLP_Id, model, kf_num, mesh_save_path):
-        return self.mesher.extract_single_mesh(model, localMLP_Id, kf_num=kf_num, save_path=mesh_save_path)
+    def extract_a_mesh_offline(self, localMLP_Id, model, kf_num, mesh_save_path, LC=True):
+        return self.mesher.extract_single_mesh(model, localMLP_Id, kf_num=kf_num, save_path=mesh_save_path, LC=LC)
 
 
     # @brief: jointly rendering (large amount of GPU memory is required).

@@ -586,6 +586,7 @@ class Manager():
     # @param localMLP_Id: Tensor(, );
     # @param pose_world: pose in World Coordinate System of this keyframe, Tensor(4, 4)
     def send_msg3(self, kf_Id, frame_Id, kf_surface_center, kf_surface_len, active_localMLP_Id, pose_world):
+        # print('send_msg3')
         # Step 1: get initial center and axis-aligned length of the new localMLP
         localMLP_ini_center, localMLP_ini_len = self.localMLP_create_rule(kf_surface_center, kf_surface_len)
 
@@ -600,8 +601,14 @@ class Manager():
 
         # Step 4: since this keyframe must be new localMLP's first keyframe, modify first keyframe-related vars
         self.slam.keyframe_ref[kf_Id] = -1
+        # print('bp1 send msg3 kf_Id:', kf_Id)
+        # print('bp1 send msg3:', self.slam.get_num_kf_poses())
         self.slam.kf_c2w[kf_Id] = pose_world
+        self.slam.kf_c2w_GO[kf_Id] = pose_world
+        # print('bp2 send msg3:', self.slam.get_num_kf_poses())
         self.slam.est_c2w_data[frame_Id] = torch.eye(4).to(self.device)
+        self.slam.est_c2w_data_RO[frame_Id] = torch.eye(4).to(self.device)
+        self.slam.est_c2w_data_GO[frame_Id] = torch.eye(4).to(self.device)
         self.kfSet.update_mutex_mask(new_localMLP_Id, self.slam.keyframe_ref, self.kfSet.collected_kf_num[0])
         return 3, new_localMLP_Id
     ######################################## END msg processing functions ########################################
